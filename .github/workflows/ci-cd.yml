@@ -25,10 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
 
   build_and_push:
@@ -65,12 +64,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  #deploy:
-  #  needs: build_and_push
-  #  runs-on: ubuntu-latest
-  #  if: github.ref == 'refs/heads/main'
-  #  steps:
-  #    - name: Deploy to Azure Container Instance (Optional)
-  #      run: |
-  #        echo "Deployment step - configure based on your Azure setup"
-  #        echo "Image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+  deploy:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Azure Container Instance (Optional)
+        run: |
+          echo "Deployment step - configure based on your Azure setup"
+          echo "Image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
