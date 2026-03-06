@@ -93,6 +93,7 @@ jobs:
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/hpa.yaml
 
       - name: Wait for deployment
         run: |
@@ -100,4 +101,4 @@ jobs:
 
       - name: Get deployment info
         run: |
-          kubectl get pods,services,ingress -l app=mibanco-app
+          kubectl get pods,services,ingress,hpa -l app=mibanco-app
