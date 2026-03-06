@@ -69,7 +69,35 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy to Azure Container Instance (Optional)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Get AKS credentials
         run: |
-          echo "Deployment step - configure based on your Azure setup"
-          echo "Image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          az aks get-credentials --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_AKS_CLUSTER }}
+
+      - name: Replace image in deployment
+        run: |
+          sed -i "s|\${AZURE_REGISTRY_LOGIN_SERVER}|${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}|g" k8s/deployment.yaml
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/mibanco-app --timeout=300s
+
+      - name: Get deployment info
+        run: |
+          kubectl get pods,services,ingress -l app=mibanco-app
