@@ -13,7 +13,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Hello Mibancov3');
+  res.send('Hello App');
 });
 
 if (require.main === module) {

@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}
-  IMAGE_NAME: mibanco-app
+  IMAGE_NAME: test-app
 
 jobs:
   ci_job:
@@ -64,41 +64,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  deploy:
-    needs: build_and_push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v1
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          image-ref: test:latest
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
 
-      - name: Get AKS credentials
-        run: |
-          az aks get-credentials --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_AKS_CLUSTER }}
-
-      - name: Replace image in deployment
-        run: |
-          sed -i "s|\${AZURE_REGISTRY_LOGIN_SERVER}|${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}|g" k8s/deployment.yaml
-
-      - name: Deploy to AKS
-        run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
-          kubectl apply -f k8s/hpa.yaml
-
-      - name: Wait for deployment
-        run: |
-          kubectl rollout status deployment/mibanco-app --timeout=300s
-
-      - name: Get deployment info
-        run: |
-          kubectl get pods,services,ingress,hpa -l app=mibanco-app
