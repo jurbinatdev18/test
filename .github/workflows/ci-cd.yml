@@ -9,7 +9,6 @@ on:
       - main
 
 env:
-  REGISTRY: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}
   IMAGE_NAME: test-app
 
 jobs:
@@ -43,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
