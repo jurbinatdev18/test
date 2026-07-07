@@ -61,23 +61,44 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:latest
-          severity: CRITICAL
-          exit-code: "1"
+          severity: HIGH,MEDIUM,LOW,CRITICAL
+          exit-code: "0"
           ignore-unfixed: true
           output: trivy-results.json
           format: json
 
-      - name: Check for HIGH or CRITICAL vulnerabilities
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:latest
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Summarize Trivy results
         shell: bash
         run: |
-          count=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-results.json)
+          critical=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy-results.json)
+          high=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH")] | length' trivy-results.json)
+          medium=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' trivy-results.json)
+          low=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="LOW")] | length' trivy-results.json)
+          unknown=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="UNKNOWN")] | length' trivy-results.json)
 
-          echo "Found $count HIGH/CRITICAL vulnerabilities"
+          echo "========================================="
+          echo "Trivy Vulnerability Summary"
+          echo "========================================="
+          echo "CRITICAL : $critical"
+          echo "HIGH     : $high"
+          echo "MEDIUM   : $medium"
+          echo "LOW      : $low"
+          echo "UNKNOWN  : $unknown"
+          echo "========================================="
 
-          if [ "$count" -gt 0 ]; then
-            echo "HIGH/CRITICAL vulnerabilities detected."
-            jq '.Results[].Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy-results.json
+          # Fail only if HIGH or CRITICAL vulnerabilities exist
+          if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ]; then
+            echo "❌ HIGH or CRITICAL vulnerabilities detected."
             exit 1
           fi
 
-          echo "No HIGH or CRITICAL vulnerabilities found."
+          echo "✅ No HIGH or CRITICAL vulnerabilities detected."
