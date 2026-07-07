@@ -1,6 +1,8 @@
 # Use the official Node.js 18 image as base
 FROM node:18-alpine
 
+RUN apk add --no-cache --upgrade libcrypto3 libssl3
+
 # Set the working directory
 WORKDIR /app
 
