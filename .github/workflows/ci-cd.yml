@@ -64,6 +64,20 @@ jobs:
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
-          format: table
+          output: trivy-results.json
+          format: json
 
+      - name: Check for HIGH or CRITICAL vulnerabilities
+        shell: bash
+        run: |
+          count=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-results.json)
 
+          echo "Found $count HIGH/CRITICAL vulnerabilities"
+
+          if [ "$count" -gt 0 ]; then
+            echo "HIGH/CRITICAL vulnerabilities detected."
+            jq '.Results[].Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy-results.json
+            exit 1
+          fi
+
+          echo "No HIGH or CRITICAL vulnerabilities found."
