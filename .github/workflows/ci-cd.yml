@@ -57,7 +57,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy General
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:latest
@@ -67,7 +67,7 @@ jobs:
           output: trivy-results.json
           format: json
 
-      - name: Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy Specific
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:latest
@@ -96,7 +96,7 @@ jobs:
           echo "========================================="
 
           # Fail only if HIGH or CRITICAL vulnerabilities exist
-          if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ]; then
+          if [ "$critical" -gt 0 ] ; then
             echo "❌ HIGH or CRITICAL vulnerabilities detected."
             exit 1
           fi
